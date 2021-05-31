@@ -22,7 +22,7 @@ except ImportError:
 
 color=lambda tuple_: sum([tuple_[i]<<(8*i) for i in range(len(tuple_))])
 
-if len(sys.argv)!=4: # chech count of arguments
+if len(sys.argv)!=4 or any([i in sys.argv for i in ('--help','--usage','-h')]): # chech count of arguments
 	print(f'usage: {sys.argv[0]} <path to base image> '
 		'<path to secret data> <path to final image>\n'
 		f'example: {sys.argv[0]} base.png secret.bin out.png')
@@ -34,7 +34,7 @@ if len(sys.argv)!=4: # chech count of arguments
 		'5: secret data is too big ( you need to enlarge header size (hardcoded but may be changed) )\n'
 		'6: base file is too small ( you need to use larger base file )\n'
 		'7: unknown file extension ( you need to use another file extension eg .png )\n'
-		'8: unknown error. if you see this error, please send bug report to nikita@okic.ru')
+		'8: cannot write to outfile')
 	exit(0)
 
 sys.argv.pop(0) # remove self from args
@@ -63,25 +63,20 @@ except OverflowError:
 	print('secret data is too big')
 	exit(5)
 
-try:
-	for x in range(img.size[0]): # iterate through all pixels
+for x in range(img.size[0]): # iterate through all pixels
+	if len(data)==0: #used to speed up program
+		break
+	for y in range(img.size[1]):
 		if len(data)==0: #used to speed up program
 			break
-		for y in range(img.size[1]):
-			if len(data)==0: #used to speed up program
-				break
-			byte=data.pop(0) # get one byte of data
-			pix=list(img.getpixel((x,y))) #get pixel normal color
-			for i in range(len(pix)): #always 4, RGBA
-				pix[i]=((pix[i]>>bpc)<<bpc)+byte%(1<<bpc) # drop last <bpc> bits and concatenate new <bpc>
-				byte=byte>>bpc
-			if byte:
-				data.insert(0,byte)
-			img.putpixel((x,y),color(pix)) #set new color of pixel
-except Exception as ex:
-	print('unknown error:',type(ex),ex)
-	print('please, send this bug report to nikita@okic.ru')
-	exit(8)
+		byte=data.pop(0) # get one byte of data
+		pix=list(img.getpixel((x,y))) #get pixel normal color
+		for i in range(len(pix)): #always 4, RGBA
+			pix[i]=((pix[i]>>bpc)<<bpc)+byte%(1<<bpc) # drop last <bpc> bits and concatenate new <bpc>
+			byte=byte>>bpc
+		if byte:
+			data.insert(0,byte)
+		img.putpixel((x,y),color(pix)) #set new color of pixel
 
 if len(data)>0:
 	print('base file is too small for this secret data')
@@ -93,3 +88,6 @@ except (KeyError, ValueError) as ex:
 	print(ex)
 	print('can you mean ".png"?')
 	exit(7)
+except (PermissionError, FileNotFoundError) as ex:
+  print('Cannot write to',ex.filename)
+  exit(8)
