@@ -16,7 +16,7 @@ color=lambda tuple_: sum([tuple_[i]<<(8*i) for i in range(len(tuple_))])
 if len(sys.argv)!=4: # chech count of arguments
 	print(f'usage: {sys.argv[0]} <path to base image> '
 		'<path to secret data> <path to final image>\n'
-		f'example: {sys.argv[0]} a.png b.bin c.png')
+		f'example: {sys.argv[0]} base.png secret.bin out.png')
 	print('exit codes:\n'
 		'1: cannot find Pillow ( install Pillow )\n'
 		'2: cannot find base image\n'
@@ -25,7 +25,7 @@ if len(sys.argv)!=4: # chech count of arguments
 		'5: secret data is too big ( you need to enlarge header size (hardcoded but may be changed) )\n'
 		'6: base file is too small ( you need to use larger base file )\n'
 		'7: unknown file extension ( you need to use another file extension eg .png )\n'
-		'8: unknown error. if you see this error, please send bug reprt to nkudravcev49@gmail.com')
+		'8: unknown error. if you see this error, please send bug report to nikita@okic.ru')
 	exit(0)
 
 sys.argv.pop(0) # remove self from args
