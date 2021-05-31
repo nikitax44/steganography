@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+
+config={
+	'bpc':2, #bits per color channel. recommended 2
+	'hs':2,  #head size. max secret file size equals 256**hs bytes
+}
+
+hs=config.get('hs',2)
+bpc=config.get('bpc',2)
+
 try:
 	from PIL import Image, UnidentifiedImageError
 except ImportError:
@@ -39,10 +48,8 @@ except UnidentifiedImageError:
 	print('base file is not image')
 	exit(3)
 
-img.convert('RGBA')
+img=img.convert('RGBA')
 
-bpc=2 #bits per color channel. recommended 2
-hs=2  #head size. max secret file size equals 256**hs bytes
 
 try:
 	with open(sys.argv.pop(0),'rb') as f: # open secret data file
@@ -73,7 +80,7 @@ try:
 			img.putpixel((x,y),color(pix)) #set new color of pixel
 except Exception as ex:
 	print('unknown error:',type(ex),ex)
-	print('please, send this bug report to nkudravcev49@gmail.com')
+	print('please, send this bug report to nikita@okic.ru')
 	exit(8)
 
 if len(data)>0:
