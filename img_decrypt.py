@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 config={
-  'bpc':2, #bits per color channel. recommended 2
-  'hs':2,  #head size. max secret file size equals 256**hs bytes
+  'bpc':3, #bits per color channel. recommended 2
+  'hs':3,  #head size. max secret file size equals 256**hs bytes
 }
 
 hs=config.get('hs',2)
@@ -43,46 +43,37 @@ except UnidentifiedImageError:
 	exit(3)
 
 data=bytearray()
+import bytegen as bg
+
+def get_data_from_image(img):
+	for x in range(img.size[0]):
+		for y in range(img.size[1]):
+			pix=img.getpixel((x,y))
+			for i in pix:
+				buf=i&((1<<bpc)-1)
+				for yi in bg.int_iter(buf, bpc):
+					yield yi
 
 
-done=False
-length=-1
-bits=0
-byte=0
+def parse_data(img):
+	bits=byte=head=hl=0
+	iterator=bg.assembly(get_data_from_image(img))
+	for i in iterator:
+		if hl!=hs:
+			head<<=8
+			head+=i
+			hl+=1
+		else:
+			head-=1
+			yield i
+			if head==0:
+				break
 
-for x in range(img.size[0]):
-	if done:
-		break
-	for y in range(img.size[1]):
-		if done:
-			break
-		pix=img.getpixel((x,y))
-		for i in pix[::-1]:
-			byte=(byte<<bpc)+i%(1<<bpc)
-			bits+=bpc
-			while bits>=8: #if is enough, but just in case, I wrote while
-				data.append(byte>>(bits-8))
-				byte=byte%(1<<(bits-8))
-				bits-=8
-		if len(data)>=hs:
-			if length==-1:
-				length=int.from_bytes(data[:hs],'little')
-				data=data[hs:]
-			if len(data)>=length:
-				done=True
-if not done:
-	print('broken image')
-	exit(9)
 
-#for _ in range(hs):
-#	data.pop(0) #remove length mark
-
-while length<len(data): # remove not used bytes
-	data.pop()
 
 try:
 	with open(sys.argv.pop(0),'wb') as f:
-		f.write(data)
+		f.write(bytearray(parse_data(img)))
 except (PermissionError, FileNotFoundError) as ex:
 	print('Cannot write to',ex.filename)
 	exit(8)
